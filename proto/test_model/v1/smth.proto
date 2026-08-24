@@ -1,6 +1,6 @@
 edition = "2024";
 
-package test.v1;
+package test_model.v1;
 
 message Person {
   string name = 1;

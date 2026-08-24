@@ -13,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
         with:
           version: "1.72.0"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -28,10 +29,17 @@ jobs:
       - name: Generate code
         run: buf generate
 
+      # Wrap gen/cpp in a throwaway "cpp" directory: CMake's FetchContent/
+      # ExternalProject auto-flattens an archive that has exactly one
+      # top-level directory. Without the wrapper, that single top-level dir
+      # would be the package's own path (e.g. test_model/), and stripping it
+      # breaks the self-includes the generated files use (e.g.
+      # "test_model/v1/smth.pb.h"). The wrapper directory absorbs the strip
+      # instead, leaving the real package path intact under models_SOURCE_DIR.
       - name: Create tarball
-        run: tar -czf pws2model-${{ github.ref_name }}.tar.gz -C gen/cpp .
+        run: tar -czf pws2model-${{ github.ref_name }}.tar.gz -C gen cpp
 
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: pws2model-${{ github.ref_name }}.tar.gz
