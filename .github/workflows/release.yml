@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+
+      - name: Generate code
+        run: buf generate
+
+      - name: Create tarball
+        run: tar -czf pws2model-${{ github.ref_name }}.tar.gz -C gen/cpp .
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pws2model-${{ github.ref_name }}.tar.gz
